@@ -1,7 +1,7 @@
 package test
 
 import (
-	"github.com/cperrin88/mrt_parser/pkg/mrt"
+	"github.com/cperrin88/go-mrt-parser/pkg/mrt"
 	"os"
 	"testing"
 )

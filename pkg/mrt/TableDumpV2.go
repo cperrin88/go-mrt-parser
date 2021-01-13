@@ -118,6 +118,29 @@ func ParseTableDumpV2(r io.Reader, subType DataSubType) TableDump {
 	return nil
 }
 
+func ReadBytesToUint(r io.Reader, num uint) uint {
+	switch num {
+	case 1:
+		var ret uint8
+		binary.Read(r, binary.BigEndian, &ret)
+		return uint(ret)
+	case 2:
+		var ret uint16
+		binary.Read(r, binary.BigEndian, &ret)
+		return uint(ret)
+	case 4:
+		var ret uint32
+		binary.Read(r, binary.BigEndian, &ret)
+		return uint(ret)
+	case 8:
+		var ret uint64
+		binary.Read(r, binary.BigEndian, &ret)
+		return uint(ret)
+	default:
+		return 0
+	}
+}
+
 func ParsePeerIndexTable(r io.Reader) PeerIndexTable {
 	table := PeerIndexTable{}
 	var header struct {
@@ -143,35 +166,36 @@ func ParsePeerIndexTable(r io.Reader) PeerIndexTable {
 		peerBGPId := make([]byte, 4)
 		binary.Read(r, binary.BigEndian, peerBGPId)
 		var peerIPAddr []byte
-		var peerAS []byte
+		//var peerAS []byte
+		var peerASBytes uint
 		switch peerType {
 		case 0:
-			peerIPAddr = make([]byte, 8)
-			peerAS = make([]byte, 2)
+			peerIPAddr = make([]byte, 4)
+			peerASBytes = 2
 			break
 		case 1:
 			peerIPAddr = make([]byte, 16)
-			peerAS = make([]byte, 2)
+			peerASBytes = 2
 			break
 		case 2:
-			peerIPAddr = make([]byte, 8)
-			peerAS = make([]byte, 4)
+			peerIPAddr = make([]byte, 4)
+			peerASBytes = 4
 			break
 		case 3:
 			peerIPAddr = make([]byte, 16)
-			peerAS = make([]byte, 4)
+			peerASBytes = 4
 			break
 		}
 
 		binary.Read(r, binary.BigEndian, peerIPAddr)
-		binary.Read(r, binary.BigEndian, peerAS)
+		peerAS := ReadBytesToUint(r, peerASBytes)
 
 		peerEntry := PeerEntry{
 			PeerIndex:     i,
 			PeerType:      peerType,
 			PeerBGPId:     peerBGPId,
 			PeerIPAddress: peerIPAddr,
-			PeerAS:        0, //TODO: Get real AS number
+			PeerAS:        peerAS,
 		}
 		table.PeerEntries = append(table.PeerEntries, peerEntry)
 	}
